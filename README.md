@@ -308,7 +308,7 @@ Help make research automation even better:
 
 1. Fork the repository
 2. Create a feature branch
-3. Follow [CLAUDE.md](CLAUDE.md) coding standards
+3. Follow [CLAUDE.md](docs/development/CLAUDE.md) coding standards
 4. Submit a pull request
 
 Ideas for contributions:

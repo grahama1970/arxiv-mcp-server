@@ -50,3 +50,19 @@ archive/
 
 # Cleanup summary (temporary)
 CLEANUP_SUMMARY.md
+
+# Data directory (papers, but keep structure)
+/data/papers/pdfs/*
+/data/papers/markdown/*
+/data/papers/json/*
+/data/papers/metadata/*
+/data/annotations/*
+# Keep directory structure
+!/data/papers/pdfs/.gitkeep
+!/data/papers/markdown/.gitkeep
+!/data/papers/json/.gitkeep
+!/data/papers/metadata/.gitkeep
+!/data/annotations/.gitkeep
+
+# Test data should be versioned
+!/tests/test_data/
