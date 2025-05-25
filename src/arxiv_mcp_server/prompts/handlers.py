@@ -4,6 +4,10 @@ from typing import List, Dict, Optional
 from mcp.types import Prompt, PromptMessage, TextContent, GetPromptResult
 from .prompts import PROMPTS
 from .deep_research_analysis_prompt import PAPER_ANALYSIS_PROMPT
+from .conversion_guide_prompt import CONVERSION_GUIDE_PROMPT, FORMAT_SELECTION_PROMPT
+from .content_description_prompt import CONTENT_DESCRIPTION_PROMPT
+from .code_analysis_prompt import CODE_ANALYSIS_PROMPT
+from .comprehensive_research_guide import get_comprehensive_guide
 
 
 # Legacy global research context - used as fallback when no session_id is provided
@@ -39,8 +43,8 @@ Present your analysis with the following structure:
 
 async def list_prompts() -> List[Prompt]:
     """Handle prompts/list request."""
-    # Filter to only include deep-paper-analysis
-    return [PROMPTS["deep-paper-analysis"]] if "deep-paper-analysis" in PROMPTS else []
+    # Return all available prompts
+    return list(PROMPTS.values())
 
 
 async def get_prompt(
@@ -59,10 +63,81 @@ async def get_prompt(
     Raises:
         ValueError: If prompt not found or arguments invalid
     """
-    if name != "deep-paper-analysis":
+    if name not in PROMPTS:
         raise ValueError(f"Prompt not found: {name}")
 
     prompt = PROMPTS[name]
+    
+    # Handle conversion-guide prompt
+    if name == "conversion-guide":
+        use_case = arguments.get("use_case", "general") if arguments else "general"
+        
+        # Add specific guidance based on use case
+        if use_case == "tables" or use_case == "data-extraction":
+            extra_guidance = f"\n\n{FORMAT_SELECTION_PROMPT}"
+        else:
+            extra_guidance = ""
+        
+        return GetPromptResult(
+            messages=[
+                PromptMessage(
+                    role="user",
+                    content=TextContent(
+                        type="text",
+                        text=f"{CONVERSION_GUIDE_PROMPT}{extra_guidance}",
+                    ),
+                )
+            ]
+        )
+    
+    # Handle content-description-guide prompt
+    if name == "content-description-guide":
+        return GetPromptResult(
+            messages=[
+                PromptMessage(
+                    role="user",
+                    content=TextContent(
+                        type="text",
+                        text=CONTENT_DESCRIPTION_PROMPT,
+                    ),
+                )
+            ]
+        )
+    
+    # Handle code-analysis prompt
+    if name == "code-analysis":
+        language = arguments.get("language") if arguments else None
+        prompt_text = CODE_ANALYSIS_PROMPT
+        if language:
+            prompt_text += f"\n\nFocus on {language} code examples specifically."
+        
+        return GetPromptResult(
+            messages=[
+                PromptMessage(
+                    role="user",
+                    content=TextContent(
+                        type="text",
+                        text=prompt_text,
+                    ),
+                )
+            ]
+        )
+    
+    # Handle comprehensive-research-guide prompt
+    if name == "comprehensive-research-guide":
+        return GetPromptResult(
+            messages=[
+                PromptMessage(
+                    role="user",
+                    content=TextContent(
+                        type="text",
+                        text=get_comprehensive_guide(),
+                    ),
+                )
+            ]
+        )
+    
+    # Original deep-paper-analysis logic
     if arguments is None:
         raise ValueError(f"No arguments provided for prompt: {name}")
 

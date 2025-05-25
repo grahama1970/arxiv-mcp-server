@@ -1,4 +1,6 @@
 # Python
+vertex_ai_service_account.json
+
 __pycache__/
 *.py[cod]
 *$py.class
@@ -26,6 +28,9 @@ wheels/
 venv/
 env/
 ENV/
+
+repos
+examples
 
 # IDE
 .idea/

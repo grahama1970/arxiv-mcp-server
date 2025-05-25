@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "arxiv-mcp-server"
-version = "0.2.10"
+version = "0.3.0"
 description = "A flexible arXiv search and analysis service with MCP protocol support"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,13 +19,21 @@ dependencies = [
     "pydantic>=2.8.0",
     "mcp>=1.2.0",
     "pymupdf4llm>=0.0.17",
+    "pymupdf>=1.23.0",
     "aiohttp>=3.9.1",
     "python-dotenv>=1.0.0",
     "pydantic-settings>=2.1.0",
     "aiofiles>=23.2.1",
     "uvicorn>=0.30.0",
     "sse-starlette>=1.8.2",
-    "anyio>=4.2.0"
+    "anyio>=4.2.0",
+    "loguru>=0.7.3",
+    "tqdm>=4.66.0",
+    "psutil>=5.9.0",
+    "tree-sitter>=0.23.0",
+    "tree-sitter-language-pack>=0.0.3",
+    "scikit-learn>=1.3.0",
+    "numpy>=1.24.0",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +46,9 @@ test = [
 ]
 dev = [
     "black>=23.3.0"
+]
+camelot = [
+    "camelot-py[cv]>=0.11.0"
 ]
 
 [tool.pytest.ini_options]

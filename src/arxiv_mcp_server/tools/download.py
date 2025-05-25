@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 import mcp.types as types
 from ..config import Settings
-import pymupdf4llm
+from ..converters import ConverterFactory, ConverterType, OutputFormat
 import logging
 
 logger = logging.getLogger("arxiv-mcp-server")
@@ -28,11 +28,12 @@ class ConversionStatus:
     started_at: datetime
     completed_at: Optional[datetime] = None
     error: Optional[str] = None
+    converter: Optional[str] = None
 
 
 download_tool = types.Tool(
     name="download_paper",
-    description="Download a paper and create a resource for it",
+    description="Download a paper and convert to markdown. Default uses fast pymupdf4llm. Only use marker-pdf when accuracy is critical (10-50x slower, 4GB+ RAM)",
     inputSchema={
         "type": "object",
         "properties": {
@@ -45,36 +46,56 @@ download_tool = types.Tool(
                 "description": "If true, only check conversion status without downloading",
                 "default": False,
             },
+            "converter": {
+                "type": "string",
+                "description": "PDF converter: pymupdf4llm (fast, default) or marker-pdf (very slow but accurate)",
+                "enum": ["pymupdf4llm", "marker-pdf"],
+                "default": "pymupdf4llm",
+            },
+            "output_format": {
+                "type": "string",
+                "description": "Output format (markdown or json - json only supported by marker-pdf)",
+                "enum": ["markdown", "json"],
+                "default": "markdown",
+            },
         },
         "required": ["paper_id"],
     },
 )
 
 
-def get_paper_path(paper_id: str, suffix: str = ".md") -> Path:
+def get_paper_path(paper_id: str, suffix: str = ".md", output_format: str = "markdown") -> Path:
     """Get the absolute file path for a paper with given suffix."""
     storage_path = Path(settings.STORAGE_PATH)
     storage_path.mkdir(parents=True, exist_ok=True)
+    # Override suffix based on output format
+    if output_format == "json":
+        suffix = ".json"
     return storage_path / f"{paper_id}{suffix}"
 
 
-def convert_pdf_to_markdown(paper_id: str, pdf_path: Path) -> None:
-    """Convert PDF to Markdown in a separate thread."""
+async def convert_pdf_to_markdown(paper_id: str, pdf_path: Path, converter_type: ConverterType, output_format: OutputFormat = "markdown") -> None:
+    """Convert PDF to specified format using specified converter."""
     try:
-        logger.info(f"Starting conversion for {paper_id}")
-        markdown = pymupdf4llm.to_markdown(pdf_path, show_progress=False)
-        md_path = get_paper_path(paper_id, ".md")
-
-        with open(md_path, "w", encoding="utf-8") as f:
-            f.write(markdown)
-
+        logger.info(f"Starting conversion for {paper_id} using {converter_type} to {output_format}")
+        
+        # Create converter
+        converter = ConverterFactory.create(converter_type, Path(settings.STORAGE_PATH))
+        result = await converter.convert(paper_id, pdf_path, output_format)
+        
         status = conversion_statuses.get(paper_id)
         if status:
-            status.status = "success"
-            status.completed_at = datetime.now()
+            if result.success:
+                status.status = "success"
+                status.completed_at = result.completed_at
+                status.converter = converter_type
+            else:
+                status.status = "error"
+                status.completed_at = result.completed_at
+                status.error = result.error
+                status.converter = converter_type
 
-        # Clean up PDF after successful conversion
-        logger.info(f"Conversion completed for {paper_id}")
+        logger.info(f"Conversion {'completed' if result.success else 'failed'} for {paper_id}")
 
     except Exception as e:
         logger.error(f"Conversion failed for {paper_id}: {str(e)}")
@@ -83,6 +104,7 @@ def convert_pdf_to_markdown(paper_id: str, pdf_path: Path) -> None:
             status.status = "error"
             status.completed_at = datetime.now()
             status.error = str(e)
+            status.converter = converter_type
 
 
 async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
@@ -90,12 +112,20 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
     try:
         paper_id = arguments["paper_id"]
         check_status = arguments.get("check_status", False)
+        converter_type = arguments.get("converter", "pymupdf4llm")
+        output_format = arguments.get("output_format", "markdown")
 
         # If only checking status
         if check_status:
             status = conversion_statuses.get(paper_id)
             if not status:
-                if get_paper_path(paper_id, ".md").exists():
+                # Check for both markdown and json files
+                md_path = get_paper_path(paper_id, ".md", "markdown")
+                json_path = get_paper_path(paper_id, ".json", "json")
+                
+                if md_path.exists() or json_path.exists():
+                    existing_format = "markdown" if md_path.exists() else "json"
+                    existing_path = md_path if md_path.exists() else json_path
                     return [
                         types.TextContent(
                             type="text",
@@ -103,7 +133,8 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
                                 {
                                     "status": "success",
                                     "message": "Paper is ready",
-                                    "resource_uri": f"file://{get_paper_path(paper_id, '.md')}",
+                                    "resource_uri": f"file://{existing_path}",
+                                    "format": existing_format,
                                 }
                             ),
                         )
@@ -133,6 +164,7 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
                                 else None
                             ),
                             "error": status.error,
+                            "converter": getattr(status, "converter", None),
                             "message": f"Paper conversion {status.status}",
                         }
                     ),
@@ -140,7 +172,8 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
             ]
 
         # Check if paper is already converted
-        if get_paper_path(paper_id, ".md").exists():
+        output_path = get_paper_path(paper_id, ".md" if output_format == "markdown" else ".json", output_format)
+        if output_path.exists():
             return [
                 types.TextContent(
                     type="text",
@@ -148,7 +181,8 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
                         {
                             "status": "success",
                             "message": "Paper already available",
-                            "resource_uri": f"file://{get_paper_path(paper_id, '.md')}",
+                            "resource_uri": f"file://{output_path}",
+                            "format": output_format,
                         }
                     ),
                 )
@@ -165,6 +199,7 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
                             "status": status.status,
                             "message": f"Paper conversion {status.status}",
                             "started_at": status.started_at.isoformat(),
+                            "converter": getattr(status, "converter", converter_type),
                         }
                     ),
                 )
@@ -187,9 +222,9 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
         status = conversion_statuses[paper_id]
         status.status = "converting"
 
-        # Start conversion in thread
+        # Start conversion as async task
         asyncio.create_task(
-            asyncio.to_thread(convert_pdf_to_markdown, paper_id, pdf_path)
+            convert_pdf_to_markdown(paper_id, pdf_path, converter_type, output_format)
         )
 
         return [
@@ -198,8 +233,10 @@ async def handle_download(arguments: Dict[str, Any]) -> List[types.TextContent]:
                 text=json.dumps(
                     {
                         "status": "converting",
-                        "message": "Paper downloaded, conversion started",
+                        "message": f"Paper downloaded, conversion started with {converter_type} to {output_format}",
                         "started_at": status.started_at.isoformat(),
+                        "converter": converter_type,
+                        "output_format": output_format,
                     }
                 ),
             )

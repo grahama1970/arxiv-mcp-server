@@ -80,4 +80,36 @@ PROMPTS = {
             ),
         ],
     ),
+    "conversion-guide": Prompt(
+        name="conversion-guide",
+        description="Guide for using advanced PDF conversion features with marker-pdf",
+        arguments=[
+            PromptArgument(
+                name="use_case",
+                description="Your use case (reading/analysis/data-extraction/tables)",
+                required=False,
+            ),
+        ],
+    ),
+    "content-description-guide": Prompt(
+        name="content-description-guide",
+        description="Guide for using LLM to describe tables and images in papers",
+        arguments=[],
+    ),
+    "code-analysis": Prompt(
+        name="code-analysis",
+        description="Guide for analyzing code blocks in ArXiv papers using Tree-Sitter",
+        arguments=[
+            PromptArgument(
+                name="language",
+                description="Programming language to focus on (optional)",
+                required=False,
+            ),
+        ],
+    ),
+    "comprehensive-research-guide": Prompt(
+        name="comprehensive-research-guide",
+        description="Complete guide for using all 15 ArXiv MCP server tools effectively",
+        arguments=[],
+    ),
 }
