@@ -40,6 +40,13 @@ examples
 
 # Logs
 *.log
+logs/
 
 # Local development settings
 .env
+
+# Archive directory
+archive/
+
+# Cleanup summary (temporary)
+CLEANUP_SUMMARY.md

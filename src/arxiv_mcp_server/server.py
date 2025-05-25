@@ -18,14 +18,15 @@ from .tools import (
     handle_conversion_options, handle_describe_content, handle_system_stats, 
     handle_analyze_code, handle_summarize_paper, handle_extract_citations,
     handle_batch_download, handle_compare_paper_ideas, handle_find_similar_papers,
-    handle_extract_sections, handle_add_paper_note, handle_list_paper_notes
+    handle_extract_sections, handle_add_paper_note, handle_list_paper_notes,
+    handle_find_research_support, handle_search_research_findings
 )
 from .tools import (
     search_tool, download_tool, list_tool, read_tool, conversion_options_tool, 
     describe_content_tool, system_stats_tool, analyze_code_tool, summarize_paper_tool,
     extract_citations_tool, batch_download_tool, compare_paper_ideas_tool,
     find_similar_papers_tool, extract_sections_tool, add_paper_note_tool,
-    list_paper_notes_tool
+    list_paper_notes_tool, find_research_support_tool, search_research_findings_tool
 )
 from .prompts.handlers import list_prompts as handler_list_prompts
 from .prompts.handlers import get_prompt as handler_get_prompt
@@ -58,7 +59,7 @@ async def list_tools() -> List[types.Tool]:
         describe_content_tool, system_stats_tool, analyze_code_tool, summarize_paper_tool,
         extract_citations_tool, batch_download_tool, compare_paper_ideas_tool,
         find_similar_papers_tool, extract_sections_tool, add_paper_note_tool,
-        list_paper_notes_tool
+        list_paper_notes_tool, find_research_support_tool, search_research_findings_tool
     ]
 
 
@@ -99,6 +100,10 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextCont
             return await handle_add_paper_note(arguments)
         elif name == "list_paper_notes":
             return await handle_list_paper_notes(arguments)
+        elif name == "find_research_support":
+            return await handle_find_research_support(arguments)
+        elif name == "search_research_findings":
+            return await handle_search_research_findings(arguments)
         else:
             return [types.TextContent(type="text", text=f"Error: Unknown tool {name}")]
     except Exception as e:

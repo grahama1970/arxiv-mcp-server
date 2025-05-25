@@ -1,6 +1,6 @@
 # ArXiv MCP Server - Quick Reference
 
-## All 15 Tools at a Glance
+## All 17 Tools at a Glance
 
 ### 🔍 Search & Discovery
 ```python
@@ -123,6 +123,27 @@ await call_tool("get_system_stats", {})
 
 # Bonus: Check conversion options
 await call_tool("get_conversion_options", {})
+```
+
+### 🔬 Research Support & Evidence
+```python
+# 16. Find research support (bolster/contradict)
+await call_tool("find_research_support", {
+    "research_context": "Your research claim or hypothesis",
+    "paper_ids": ["all"],  # or specific IDs
+    "support_type": "both",  # or "bolster", "contradict"
+    "llm_provider": "mock",  # or "openai", "anthropic"
+    "min_confidence": 0.7,
+    "sections_to_analyze": ["abstract", "results"]  # optional
+})
+
+# 17. Search research findings
+await call_tool("search_research_findings", {
+    "query": "thermal efficiency",
+    "support_type": "both",  # or "bolster", "contradict"
+    "paper_id": "2401.12345",  # optional filter
+    "top_k": 10
+})
 ```
 
 ## 🎯 Common Workflows

@@ -20,6 +20,12 @@ from .annotations import (
     handle_add_paper_note,
     handle_list_paper_notes
 )
+from .research_support import (
+    find_research_support_tool,
+    search_research_findings_tool,
+    handle_find_research_support,
+    handle_search_research_findings
+)
 
 
 __all__ = [
@@ -55,4 +61,8 @@ __all__ = [
     "handle_add_paper_note",
     "list_paper_notes_tool",
     "handle_list_paper_notes",
+    "find_research_support_tool",
+    "handle_find_research_support",
+    "search_research_findings_tool",
+    "handle_search_research_findings",
 ]
