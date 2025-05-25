@@ -7,6 +7,7 @@ This directory contains implementation tasks for the ArXiv MCP server following 
 | Task File | Description | Status |
 |-----------|-------------|--------|
 | `001_arxiv_mcp_features.md` | Implement 7 research-focused tools for the ArXiv MCP server | ✅ COMPLETED |
+| `002_3layer_architecture_refactor.md` | Refactor to 3-layer architecture (core/cli/mcp) | 🚧 IN PROGRESS |
 
 ## Task Structure
 
