@@ -66,3 +66,180 @@ __all__ = [
     "search_research_findings_tool",
     "handle_search_research_findings",
 ]
+
+# Semantic search tools
+from .semantic_search import (
+    semantic_search_tool,
+    handle_semantic_search,
+    index_papers_tool,
+    handle_index_papers,
+    search_stats_tool,
+    handle_search_stats,
+)
+
+# Reading list tools
+from .reading_list import (
+    add_to_reading_list_tool,
+    get_reading_list_tool,
+    mark_as_read_tool,
+    remove_from_reading_list_tool,
+    handle_add_to_reading_list,
+    handle_get_reading_list,
+    handle_mark_as_read,
+    handle_remove_from_reading_list,
+)
+
+# Daily digest tools
+from .daily_digest import (
+    create_digest_subscription_tool,
+    get_daily_digest_tool,
+    list_digest_subscriptions_tool,
+    delete_digest_subscription_tool,
+    handle_create_digest_subscription,
+    handle_get_daily_digest,
+    handle_list_digest_subscriptions,
+    handle_delete_digest_subscription,
+)
+
+# Citation tracking tools
+from .citation_tracking import (
+    get_citations_tool,
+    get_references_tool,
+    get_citation_graph_tool,
+    handle_get_citations,
+    handle_get_references,
+    handle_get_citation_graph,
+)
+
+# Export/reference tools
+from .export_references import (
+    export_to_bibtex_tool,
+    export_reading_list_tool,
+    format_citation_tool,
+    handle_export_to_bibtex,
+    handle_export_reading_list,
+    handle_format_citation,
+)
+
+# Paper updates tools
+from .paper_updates import (
+    check_paper_updates_tool,
+    handle_check_paper_updates,
+)
+
+# Author following tools
+from .author_follow import (
+    follow_author_tool,
+    unfollow_author_tool,
+    list_followed_authors_tool,
+    check_followed_authors_tool,
+    handle_follow_author,
+    handle_unfollow_author,
+    handle_list_followed_authors,
+    handle_check_followed_authors,
+)
+
+# Quick citation tools
+from .quick_cite import (
+    copy_citation_tool,
+    format_multiple_citations_tool,
+    handle_copy_citation,
+    handle_format_multiple_citations,
+)
+
+# Search template tools
+from .search_templates import (
+    save_search_template_tool,
+    run_search_template_tool,
+    list_search_templates_tool,
+    handle_save_search_template,
+    handle_run_search_template,
+    handle_list_search_templates,
+)
+
+# Paper collection tools
+from .paper_collections import (
+    create_collection_tool,
+    add_to_collection_tool,
+    get_collection_tool,
+    list_collections_tool,
+    handle_create_collection,
+    handle_add_to_collection,
+    handle_get_collection,
+    handle_list_collections,
+)
+
+# Update __all__ list
+__all__.extend([
+    "semantic_search_tool",
+    "handle_semantic_search", 
+    "index_papers_tool",
+    "handle_index_papers",
+    "search_stats_tool",
+    "handle_search_stats",
+    # Reading list
+    "add_to_reading_list_tool",
+    "get_reading_list_tool",
+    "mark_as_read_tool",
+    "remove_from_reading_list_tool",
+    "handle_add_to_reading_list",
+    "handle_get_reading_list",
+    "handle_mark_as_read",
+    "handle_remove_from_reading_list",
+    # Daily digest
+    "create_digest_subscription_tool",
+    "get_daily_digest_tool",
+    "list_digest_subscriptions_tool",
+    "delete_digest_subscription_tool",
+    "handle_create_digest_subscription",
+    "handle_get_daily_digest",
+    "handle_list_digest_subscriptions",
+    "handle_delete_digest_subscription",
+    # Citation tracking
+    "get_citations_tool",
+    "get_references_tool",
+    "get_citation_graph_tool",
+    "handle_get_citations",
+    "handle_get_references",
+    "handle_get_citation_graph",
+    # Export/references
+    "export_to_bibtex_tool",
+    "export_reading_list_tool",
+    "format_citation_tool",
+    "handle_export_to_bibtex",
+    "handle_export_reading_list",
+    "handle_format_citation",
+    # Paper updates
+    "check_paper_updates_tool",
+    "handle_check_paper_updates",
+    # Author following
+    "follow_author_tool",
+    "unfollow_author_tool",
+    "list_followed_authors_tool",
+    "check_followed_authors_tool",
+    "handle_follow_author",
+    "handle_unfollow_author",
+    "handle_list_followed_authors",
+    "handle_check_followed_authors",
+    # Quick citations
+    "copy_citation_tool",
+    "format_multiple_citations_tool",
+    "handle_copy_citation",
+    "handle_format_multiple_citations",
+    # Search templates
+    "save_search_template_tool",
+    "run_search_template_tool",
+    "list_search_templates_tool",
+    "handle_save_search_template",
+    "handle_run_search_template",
+    "handle_list_search_templates",
+    # Paper collections
+    "create_collection_tool",
+    "add_to_collection_tool",
+    "get_collection_tool",
+    "list_collections_tool",
+    "handle_create_collection",
+    "handle_add_to_collection",
+    "handle_get_collection",
+    "handle_list_collections",
+])

@@ -5,7 +5,7 @@
 [![MCP Protocol](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-blue)](https://modelcontextprotocol.io)
 [![CLI Tool](https://img.shields.io/badge/CLI-Typer%20Powered-green)](https://typer.tiangolo.com/)
 
-> 🤖 **Automate your literature review** - A powerful research bot that finds evidence to support or contradict your hypotheses across ArXiv papers
+> 🤖 **Automate your literature review** - A powerful research bot with 45+ tools that finds evidence to support or contradict your hypotheses across ArXiv papers
 
 ArXivBot is both a **CLI tool** for direct command-line research automation AND an **MCP server** for AI assistant integration. It automates the tedious parts of academic research: searching papers, extracting key information, finding supporting or contradicting evidence, and building a searchable knowledge base. Let the bot handle the grunt work while you focus on the science.
 
@@ -61,14 +61,24 @@ This feature alone can save days of manual paper reading by automatically identi
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/arxiv-bot.git
-cd arxiv-bot
+git clone https://github.com/yourusername/arxiv-mcp-server.git
+cd arxiv-mcp-server
 
 # Install with uv (recommended)
-uv pip install -e .
+uv sync
 
 # Or install with pip
 pip install -e .
+```
+
+### Quick Test (No API Keys Required!)
+
+```bash
+# Test search functionality
+arxiv-cli search "quantum computing" --max-results 5
+
+# Test with mock evidence extraction
+arxiv-cli find-support "Quantum computers are faster" --all --provider mock
 ```
 
 ### Basic Automation Workflow
@@ -85,6 +95,63 @@ arxiv-cli find-support "Attention mechanisms improve model interpretability" --a
 
 # 4. Bot extracts all citations for your bibliography
 arxiv-cli extract-citations 2401.12345 --format bibtex >> refs.bib
+```
+
+### Enable Semantic Search (Optional)
+
+```bash
+# Index downloaded papers for natural language search
+arxiv-cli index-papers
+
+# Search with natural language
+arxiv-cli semantic-search "how do transformers handle long sequences"
+```
+
+### New: Daily Research Workflow
+
+```bash
+# Set up daily digest for your research area
+arxiv-cli create-digest "My Research" \
+  --keywords "transformer,attention" \
+  --authors "Vaswani,Hinton" \
+  --categories "cs.LG,cs.CL"
+
+# Get your daily digest
+arxiv-cli daily-digest --format markdown > today.md
+
+# Add interesting papers to reading list
+arxiv-cli add-reading 2401.12345 --priority high --tags "important"
+
+# Track citations of your papers
+arxiv-cli citations 1706.03762 --limit 20
+
+# Export bibliography when writing
+arxiv-cli export-reading --format bibtex --tags "my-paper" > refs.bib
+```
+
+### Enhanced Daily Workflow Features
+
+```bash
+# Check if your saved papers have been updated
+arxiv-cli check-updates --all
+
+# Follow your favorite researchers
+arxiv-cli follow "Yoshua Bengio" --notes "Deep learning pioneer"
+arxiv-cli check-authors --days 30
+
+# Quick citation copying (multiple styles)
+arxiv-cli copy-cite 1706.03762 --style apa  # Copies to clipboard!
+
+# Save complex searches as templates
+arxiv-cli save-search "ML Security" \
+  --query "adversarial attacks" \
+  --author "Goodfellow" \
+  --category "cs.LG"
+arxiv-cli run-search "ML Security"
+
+# Organize papers by project
+arxiv-cli create-collection "PhD Chapter 3" --desc "Attention mechanisms"
+arxiv-cli add-to-collection 1706.03762 "PhD Chapter 3" --notes "Seminal paper"
 ```
 
 ## 💪 Core Automation Features
@@ -172,6 +239,11 @@ arxiv-cli search-findings "methodology" --top 20
 - **conversion-options** - PDF processing options
 - **system-stats** - Bot performance metrics
 
+### Semantic Search
+- **index-papers** - Build search index with embeddings
+- **semantic-search** - Natural language search across papers
+- **search-stats** - View search database statistics
+
 ## 🔬 Research Automation Examples
 
 ### Hypothesis Testing Workflow
@@ -243,13 +315,32 @@ ArXivBot implements the Model Context Protocol (MCP), making all its tools avail
     "mcpServers": {
         "arxiv-bot": {
             "command": "python",
+            "args": ["-m", "arxiv_mcp_server"]
+        }
+    }
+}
+```
+
+Or with custom storage path:
+```json
+{
+    "mcpServers": {
+        "arxiv-bot": {
+            "command": "python",
             "args": ["-m", "arxiv_mcp_server", "--storage-path", "/path/to/papers"]
         }
     }
 }
 ```
 
-The MCP server exposes all 17 tools to AI assistants, allowing them to automate complex research workflows on your behalf.
+The MCP server exposes all 45+ tools to AI assistants, allowing them to automate complex research workflows on your behalf, including:
+- Reading list management and paper update checking
+- Author following and new paper notifications  
+- Daily digests with personalized filtering
+- Citation tracking and quick citation copying
+- Search templates for repeated queries
+- Paper collections for project organization
+- Export to all major reference managers
 
 ## ⚙️ Configuration
 
@@ -259,15 +350,21 @@ export ARXIV_STORAGE_PATH=/path/to/your/papers
 ```
 
 ### LLM Providers (for advanced features)
+
+ArXivBot works out of the box with a mock provider for testing. For production use with real AI analysis:
+
 ```bash
+# For Gemini (recommended - has free tier)
+export GEMINI_API_KEY=your-key
+
 # For OpenAI
 export OPENAI_API_KEY=your-key
 
 # For Anthropic
 export ANTHROPIC_API_KEY=your-key
 
-# Or use mock provider for testing
-arxiv-cli find-support "test hypothesis" --provider mock
+# Default is mock provider (no API key needed)
+arxiv-cli find-support "test hypothesis" --all  # Works without API keys!
 ```
 
 ### PDF Conversion
@@ -284,9 +381,17 @@ arxiv-cli download 2401.12345 --converter marker-pdf
 ```
 arxiv-bot/
 ├── src/arxiv_mcp_server/
-│   ├── tools/              # 17 automation tools
+│   ├── tools/              # 45+ automation tools
 │   │   ├── research_support.py  # Bolster/contradict engine
-│   │   ├── search.py
+│   │   ├── reading_list.py      # Paper organization
+│   │   ├── daily_digest.py      # Filtered notifications
+│   │   ├── citation_tracking.py # Citation networks
+│   │   ├── export_references.py # BibTeX/RIS export
+│   │   ├── paper_updates.py     # Version tracking
+│   │   ├── author_follow.py     # Author monitoring
+│   │   ├── quick_cite.py        # Citation copying
+│   │   ├── search_templates.py  # Saved searches
+│   │   ├── paper_collections.py # Project organization
 │   │   └── ...
 │   ├── converters/         # PDF processors  
 │   ├── llm_providers.py    # AI integrations
@@ -298,6 +403,7 @@ arxiv-bot/
 
 ## 📖 Documentation
 
+- [Tools Reference](TOOLS_REFERENCE.md) - Complete list of all 30+ research automation tools
 - [Quick Reference](docs/QUICK_REFERENCE.md) - All bot commands at a glance
 - [Usage Guide](docs/USAGE_GUIDE.md) - Detailed automation workflows
 - [Research Examples](examples/research_workflow.py) - Complete automation scripts
