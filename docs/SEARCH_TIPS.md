@@ -2,7 +2,7 @@
 
 ## Search Syntax Guide
 
-ArXiv uses specific prefixes for targeted searches. Here's the correct syntax:
+ArXiv supports advanced search queries with boolean operators and field-specific searches. Here's the complete syntax guide:
 
 ### Author Search
 ```bash
@@ -24,16 +24,42 @@ arxiv-cli search "au:\"Geoffrey Hinton\"" --max-results 5
 | Category | `cat:` | `cat:cs.LG` |
 | All fields | `all:` | `all:attention` |
 
+### Boolean Operators
+
+ArXiv supports full boolean logic for powerful searches:
+
+```bash
+# OR operator - finds papers matching ANY term
+arxiv-cli search "transformer OR bert OR gpt"
+
+# AND operator - finds papers matching ALL terms
+arxiv-cli search "transformer AND attention"
+
+# ANDNOT operator - excludes papers with specific terms
+arxiv-cli search "transformer ANDNOT bert"
+
+# Parentheses for grouping
+arxiv-cli search "(transformer OR bert) AND attention"
+arxiv-cli search "au:Hinton AND (neural OR deep OR network)"
+```
+
 ### Complex Queries
 
 ```bash
-# Combine multiple fields
+# Combine multiple fields with boolean logic
 arxiv-cli search "au:Vaswani AND ti:attention"
+arxiv-cli search "au:(Hinton OR Bengio) AND cat:cs.LG"
 
-# Search within categories
-arxiv-cli search "ti:transformer AND cat:cs.CL"
+# Search within categories with OR
+arxiv-cli search "(ti:transformer OR ti:bert) AND cat:cs.CL"
 
-# Use quotes for phrases
+# Complex grouped queries
+arxiv-cli search "(transformer OR bert OR gpt) AND (attention OR self-attention)"
+
+# Exclude specific terms
+arxiv-cli search "au:del_maestro ANDNOT (ti:checkerboard OR ti:Pyrochlore)"
+
+# Use quotes for exact phrases
 arxiv-cli search "ti:\"attention is all you need\""
 ```
 
@@ -62,18 +88,34 @@ Common ArXiv categories:
 
 ### Tips for Better Results
 
-1. **Start Simple**: If complex queries return no results, try simpler terms
+1. **Use OR for Flexible Searches**: When looking for related concepts
    ```bash
-   # Instead of this:
-   arxiv-cli search "transformer architecture attention mechanism"
+   # Find papers about any of these topics
+   arxiv-cli search "transformer OR attention OR self-attention"
    
-   # Try this:
-   arxiv-cli search "transformer attention"
+   # Find papers by any of these authors
+   arxiv-cli search "au:(Hinton OR LeCun OR Bengio)"
    ```
 
-2. **Use ArXiv's Syntax**: Always use the documented prefixes (au:, ti:, etc.)
+2. **Use Parentheses for Complex Logic**: Group related terms
+   ```bash
+   # Papers about transformers OR bert, that also mention attention
+   arxiv-cli search "(transformer OR bert) AND attention"
+   
+   # Papers in ML that discuss neural OR deep methods
+   arxiv-cli search "cat:cs.LG AND (neural OR deep)"
+   ```
 
-3. **Check Spelling**: ArXiv doesn't do fuzzy matching
+3. **Use ANDNOT to Filter Out Topics**: Exclude unwanted results
+   ```bash
+   # Transformers but not BERT-related
+   arxiv-cli search "transformer ANDNOT bert"
+   
+   # Machine learning but not reinforcement learning
+   arxiv-cli search "cat:cs.LG ANDNOT reinforcement"
+   ```
+
+4. **Check Spelling**: ArXiv doesn't do fuzzy matching for field searches
    ```bash
    # This works:
    arxiv-cli search "au:Hinton"
@@ -82,12 +124,13 @@ Common ArXiv categories:
    arxiv-cli search "au:Hinto"  # Missing 'n'
    ```
 
-4. **Recent Papers First**: Results are sorted by submission date (newest first)
-
-5. **Boolean Operators**: Use AND, OR, NOT for complex queries
+5. **Combine Strategies**: Mix field searches with boolean logic
    ```bash
-   arxiv-cli search "transformer AND NOT bert"
-   arxiv-cli search "quantum OR classical"
+   # Papers by specific authors on specific topics
+   arxiv-cli search "au:(Hinton OR Bengio) AND ti:(neural OR deep)"
+   
+   # Recent papers in multiple categories
+   arxiv-cli search "(cat:cs.LG OR cat:stat.ML) AND transformer"
    ```
 
 ## Troubleshooting Searches

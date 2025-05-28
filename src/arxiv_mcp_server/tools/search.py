@@ -208,30 +208,49 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                 except Exception as e:
                     logger.debug(f"Wider search without quotes failed: {e}")
             
-            # Strategy 2: If still no results and query has multiple words, try just keywords
+            # Strategy 2: If still no results and query has multiple words, try OR search
             if len(wider_results) == 0 and ' ' in original_query:
                 # Extract main keywords (remove common words)
                 stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were'}
                 keywords = [word for word in original_query.split() if word.lower() not in stop_words and len(word) > 2]
                 
                 if keywords:
-                    # Try with just the most important keywords
-                    keyword_query = ' '.join(keywords[:3])  # Use up to 3 main keywords
-                    logger.debug(f"Trying keyword search: {keyword_query}")
+                    # Try with OR between keywords (more flexible)
+                    or_query = ' OR '.join(keywords[:4])  # Use up to 4 main keywords
+                    logger.debug(f"Trying OR search: {or_query}")
                     
-                    keyword_search = arxiv.Search(
-                        query=keyword_query,
+                    or_search = arxiv.Search(
+                        query=or_query,
                         max_results=max_results,
                         sort_by=arxiv.SortCriterion.SubmittedDate,
                         sort_order=arxiv.SortOrder.Descending
                     )
                     try:
-                        for paper in client.results(keyword_search):
+                        for paper in client.results(or_search):
                             wider_results.append(_process_paper(paper))
                             if len(wider_results) >= max_results:
                                 break
                     except Exception as e:
-                        logger.debug(f"Keyword search failed: {e}")
+                        logger.debug(f"OR search failed: {e}")
+                        
+                    # If OR search still returns nothing, try with parentheses and all fields
+                    if len(wider_results) == 0 and len(keywords) > 2:
+                        grouped_query = f"all:({' OR '.join(keywords[:3])})"
+                        logger.debug(f"Trying grouped all-fields search: {grouped_query}")
+                        
+                        grouped_search = arxiv.Search(
+                            query=grouped_query,
+                            max_results=max_results,
+                            sort_by=arxiv.SortCriterion.SubmittedDate,
+                            sort_order=arxiv.SortOrder.Descending
+                        )
+                        try:
+                            for paper in client.results(grouped_search):
+                                wider_results.append(_process_paper(paper))
+                                if len(wider_results) >= max_results:
+                                    break
+                        except Exception as e:
+                            logger.debug(f"Grouped search failed: {e}")
             
             # Strategy 3: If query has field prefixes that might be wrong, try without them
             if len(wider_results) == 0 and ':' in original_query:
@@ -307,8 +326,8 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
                 # Create a clear message at the top
                 details = [
                     "Removed restrictive quotes if present",
-                    "Extracted key terms from your query", 
-                    "Searched across all paper fields",
+                    "Used OR operators to find papers matching any of your terms",
+                    "Searched across all paper fields instead of specific ones",
                     "Corrected common misspellings and syntax errors",
                     f"Found {len(wider_results)} potentially relevant papers"
                 ]
