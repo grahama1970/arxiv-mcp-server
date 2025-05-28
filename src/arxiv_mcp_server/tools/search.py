@@ -180,13 +180,182 @@ async def handle_search(arguments: Dict[str, Any]) -> List[types.TextContent]:
 
         logger.info(f"Search completed. Found {len(results)} papers (processed {processed_count} total)")
         
-        # Prepare response
-        response_data = {
-            "total_results": len(results), 
-            "papers": results,
-            "query": arguments.get("query"),
-            "processed_count": processed_count
-        }
+        # If no results, try widening the search
+        if len(results) == 0 and not date_from and not date_to:
+            logger.info("No results found. Attempting wider search...")
+            
+            # Try different search strategies
+            wider_results = []
+            original_query = arguments.get("query", "")
+            was_corrected = False
+            corrected_query = original_query
+            
+            # Strategy 1: Remove quotes if present
+            if '"' in query:
+                simplified_query = query.replace('"', '')
+                logger.debug(f"Trying without quotes: {simplified_query}")
+                wider_search = arxiv.Search(
+                    query=simplified_query,
+                    max_results=max_results,
+                    sort_by=arxiv.SortCriterion.SubmittedDate,
+                    sort_order=arxiv.SortOrder.Descending
+                )
+                try:
+                    for paper in client.results(wider_search):
+                        wider_results.append(_process_paper(paper))
+                        if len(wider_results) >= max_results:
+                            break
+                except Exception as e:
+                    logger.debug(f"Wider search without quotes failed: {e}")
+            
+            # Strategy 2: If still no results and query has multiple words, try just keywords
+            if len(wider_results) == 0 and ' ' in original_query:
+                # Extract main keywords (remove common words)
+                stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'are', 'was', 'were'}
+                keywords = [word for word in original_query.split() if word.lower() not in stop_words and len(word) > 2]
+                
+                if keywords:
+                    # Try with just the most important keywords
+                    keyword_query = ' '.join(keywords[:3])  # Use up to 3 main keywords
+                    logger.debug(f"Trying keyword search: {keyword_query}")
+                    
+                    keyword_search = arxiv.Search(
+                        query=keyword_query,
+                        max_results=max_results,
+                        sort_by=arxiv.SortCriterion.SubmittedDate,
+                        sort_order=arxiv.SortOrder.Descending
+                    )
+                    try:
+                        for paper in client.results(keyword_search):
+                            wider_results.append(_process_paper(paper))
+                            if len(wider_results) >= max_results:
+                                break
+                    except Exception as e:
+                        logger.debug(f"Keyword search failed: {e}")
+            
+            # Strategy 3: If query has field prefixes that might be wrong, try without them
+            if len(wider_results) == 0 and ':' in original_query:
+                # Remove field prefixes and search all fields
+                no_prefix_query = ' '.join([part.split(':')[-1] for part in original_query.split()])
+                logger.debug(f"Trying without field prefixes: {no_prefix_query}")
+                
+                all_fields_search = arxiv.Search(
+                    query=f"all:{no_prefix_query}",
+                    max_results=max_results,
+                    sort_by=arxiv.SortCriterion.SubmittedDate,
+                    sort_order=arxiv.SortOrder.Descending
+                )
+                try:
+                    for paper in client.results(all_fields_search):
+                        wider_results.append(_process_paper(paper))
+                        if len(wider_results) >= max_results:
+                            break
+                except Exception as e:
+                    logger.debug(f"All fields search failed: {e}")
+            
+            # Strategy 4: Fix common misspellings and wrong syntax
+            if len(wider_results) == 0:
+                # Common corrections
+                corrections = {
+                    'author:': 'au:',  # Wrong author prefix
+                    'title:': 'ti:',   # Wrong title prefix
+                    'category:': 'cat:',  # Wrong category prefix
+                    'abstract:': 'abs:',  # Wrong abstract prefix
+                    # Common misspellings in ML/AI field
+                    'nueral': 'neural',
+                    'nerual': 'neural',
+                    'netowrk': 'network',
+                    'netwrok': 'network',
+                    'transfomer': 'transformer',
+                    'tranformer': 'transformer',
+                    'atention': 'attention',
+                    'mechansim': 'mechanism',
+                    'algorith': 'algorithm',
+                    'recurrent': 'recurrent',
+                    'convolution': 'convolutional',
+                    'genarative': 'generative',
+                    'genrative': 'generative',
+                }
+                
+                corrected_query = original_query.lower()
+                was_corrected = False
+                
+                for wrong, right in corrections.items():
+                    if wrong in corrected_query:
+                        corrected_query = corrected_query.replace(wrong, right)
+                        was_corrected = True
+                
+                if was_corrected:
+                    logger.debug(f"Trying with corrections: {corrected_query}")
+                    corrected_search = arxiv.Search(
+                        query=corrected_query,
+                        max_results=max_results,
+                        sort_by=arxiv.SortCriterion.SubmittedDate,
+                        sort_order=arxiv.SortOrder.Descending
+                    )
+                    try:
+                        for paper in client.results(corrected_search):
+                            wider_results.append(_process_paper(paper))
+                            if len(wider_results) >= max_results:
+                                break
+                    except Exception as e:
+                        logger.debug(f"Corrected search failed: {e}")
+            
+            if wider_results:
+                logger.info(f"Wider search found {len(wider_results)} results")
+                
+                # Create a clear message at the top
+                details = [
+                    "Removed restrictive quotes if present",
+                    "Extracted key terms from your query", 
+                    "Searched across all paper fields",
+                    "Corrected common misspellings and syntax errors",
+                    f"Found {len(wider_results)} potentially relevant papers"
+                ]
+                
+                # Add specific correction info if applicable
+                if was_corrected and corrected_query != original_query.lower():
+                    details.insert(0, f"Corrected query to: {corrected_query}")
+                
+                widened_info = {
+                    "notice": "SEARCH AUTOMATICALLY BROADENED",
+                    "reason": f"No exact matches found for: {original_query}",
+                    "action": "Showing results from a simplified search",
+                    "details": details,
+                    "recommendation": "Please review these results as they may still be relevant to your needs"
+                }
+                
+                response_data = {
+                    "search_status": "widened",
+                    "widening_info": widened_info,
+                    "total_results": len(wider_results),
+                    "papers": wider_results,
+                    "original_query": original_query,
+                    "processed_count": len(wider_results)
+                }
+            else:
+                # Still no results after widening
+                response_data = {
+                    "total_results": 0,
+                    "papers": [],
+                    "query": arguments.get("query"),
+                    "processed_count": processed_count,
+                    "suggestions": [
+                        "Try simpler search terms",
+                        "Remove date filters if using them",
+                        "Use 'au:' prefix for author searches, not 'author:'",
+                        "Check spelling of technical terms",
+                        "Try searching for related concepts"
+                    ]
+                }
+        else:
+            # Normal response when results found
+            response_data = {
+                "total_results": len(results), 
+                "papers": results,
+                "query": arguments.get("query"),
+                "processed_count": processed_count
+            }
 
         return [
             types.TextContent(
