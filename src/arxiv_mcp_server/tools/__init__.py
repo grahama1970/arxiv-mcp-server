@@ -1,6 +1,6 @@
 """Tool definitions for the arXiv MCP server."""
 
-from .search import search_tool, handle_search
+from .search import search_tool, handle_search, diagnostics_tool, handle_diagnostics
 from .download import download_tool, handle_download
 from .list_papers import list_tool, handle_list_papers
 from .read_paper import read_tool, handle_read_paper
@@ -30,9 +30,11 @@ from .research_support import (
 
 __all__ = [
     "search_tool",
+    "diagnostics_tool",
     "download_tool",
     "read_tool",
     "handle_search",
+    "handle_diagnostics",
     "handle_download",
     "handle_read_paper",
     "list_tool",

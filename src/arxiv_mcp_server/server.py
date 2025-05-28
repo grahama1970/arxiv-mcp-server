@@ -14,7 +14,7 @@ from mcp.server import NotificationOptions
 from mcp.server.stdio import stdio_server
 from .config import Settings
 from .tools import (
-    handle_search, handle_download, handle_list_papers, handle_read_paper, 
+    handle_search, handle_diagnostics, handle_download, handle_list_papers, handle_read_paper, 
     handle_conversion_options, handle_describe_content, handle_system_stats, 
     handle_analyze_code, handle_summarize_paper, handle_extract_citations,
     handle_batch_download, handle_compare_paper_ideas, handle_find_similar_papers,
@@ -33,7 +33,7 @@ from .tools import (
     handle_get_collection, handle_list_collections
 )
 from .tools import (
-    search_tool, download_tool, list_tool, read_tool, conversion_options_tool, 
+    search_tool, diagnostics_tool, download_tool, list_tool, read_tool, conversion_options_tool, 
     describe_content_tool, system_stats_tool, analyze_code_tool, summarize_paper_tool,
     extract_citations_tool, batch_download_tool, compare_paper_ideas_tool,
     find_similar_papers_tool, extract_sections_tool, add_paper_note_tool,
@@ -76,7 +76,7 @@ async def get_prompt(
 async def list_tools() -> List[types.Tool]:
     """List available arXiv research tools."""
     return [
-        search_tool, download_tool, list_tool, read_tool, conversion_options_tool, 
+        search_tool, diagnostics_tool, download_tool, list_tool, read_tool, conversion_options_tool, 
         describe_content_tool, system_stats_tool, analyze_code_tool, summarize_paper_tool,
         extract_citations_tool, batch_download_tool, compare_paper_ideas_tool,
         find_similar_papers_tool, extract_sections_tool, add_paper_note_tool,
@@ -101,6 +101,8 @@ async def call_tool(name: str, arguments: Dict[str, Any]) -> List[types.TextCont
     try:
         if name == "search_papers":
             return await handle_search(arguments)
+        elif name == "get_diagnostics":
+            return await handle_diagnostics(arguments)
         elif name == "download_paper":
             return await handle_download(arguments)
         elif name == "list_papers":
