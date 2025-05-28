@@ -7,6 +7,8 @@
 
 > 🤖 **Automate your literature review** - A powerful research bot with 45+ tools that finds evidence to support or contradict your hypotheses across ArXiv papers
 
+**Latest Update (v1.0.1)**: Fixed critical search function issue in MCP integration. Added diagnostics tool for troubleshooting.
+
 ArXivBot is both a **CLI tool** for direct command-line research automation AND an **MCP server** for AI assistant integration. It automates the tedious parts of academic research: searching papers, extracting key information, finding supporting or contradicting evidence, and building a searchable knowledge base. Let the bot handle the grunt work while you focus on the science.
 
 ## 🎛️ Two Ways to Use ArXivBot
@@ -79,6 +81,9 @@ arxiv-cli search "quantum computing" --max-results 5
 
 # Test with mock evidence extraction
 arxiv-cli find-support "Quantum computers are faster" --all --provider mock
+
+# Check server health and connectivity (new!)
+arxiv-cli diagnostics
 ```
 
 ### Basic Automation Workflow
@@ -341,6 +346,35 @@ The MCP server exposes all 45+ tools to AI assistants, allowing them to automate
 - Search templates for repeated queries
 - Paper collections for project organization
 - Export to all major reference managers
+
+## 🔧 Troubleshooting
+
+### Search Not Working?
+
+If you're experiencing issues with the search function, use the diagnostics tool:
+
+```bash
+# Check server health
+arxiv-cli diagnostics
+
+# Output shows:
+# - ArXiv API connectivity status
+# - Storage path and statistics  
+# - Python environment details
+# - Any configuration issues
+```
+
+Common fixes:
+- **Network Issues**: Ensure you can reach arxiv.org
+- **Rate Limiting**: The server automatically handles rate limits with retries
+- **Empty Results**: Try broader search terms or remove date filters
+
+### MCP Integration Issues?
+
+For Claude Desktop or other MCP clients showing "No result received":
+1. Run `arxiv-cli diagnostics` to check server health
+2. Check MCP server logs for detailed error messages
+3. Ensure proper path configuration in your MCP settings
 
 ## ⚙️ Configuration
 
