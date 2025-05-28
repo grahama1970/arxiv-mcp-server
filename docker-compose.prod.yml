@@ -1,0 +1,97 @@
+# Production configuration for ArXiv MCP Server
+# Use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up
+
+version: '3.8'
+
+services:
+  arxiv-mcp:
+    # Use pre-built image from registry (when available)
+    # image: ghcr.io/yourusername/arxiv-mcp-server:latest
+    
+    # Production optimizations
+    restart: unless-stopped
+    
+    # Run as non-root user
+    user: "1000:1000"
+    
+    # Read-only root filesystem for security
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /app/.cache
+    
+    # Production environment
+    environment:
+      - LOG_LEVEL=WARNING
+      - PYTHON_ENV=production
+      
+    # No source code mounting in production
+    volumes:
+      - arxiv_papers:/data/papers
+      - model_cache:/data/models
+      # Remove source mount
+      # - ./src:/app/src:ro
+      
+    # Production resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 16G
+          cpus: '8'
+        reservations:
+          memory: 8G
+          cpus: '4'
+          
+  # ArangoDB with production settings
+  arangodb:
+    restart: unless-stopped
+    
+    # Disable web UI in production
+    ports: []
+    
+    # Production configuration
+    environment:
+      - ARANGO_ROOT_PASSWORD_FILE=/run/secrets/arango_password
+      - ARANGODB_OVERRIDE_DETECTED_TOTAL_MEMORY=8G
+      
+    # Use Docker secrets for passwords
+    secrets:
+      - arango_password
+      
+    # Production volumes with backup
+    volumes:
+      - arangodb_data:/var/lib/arangodb3
+      - arangodb_backup:/backup
+      
+    # Regular backups
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+          
+# Docker secrets for production
+secrets:
+  arango_password:
+    external: true
+    
+# Named volumes with drivers
+volumes:
+  arxiv_papers:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/arxiv-papers
+      
+  model_cache:
+    driver: local
+    
+  arangodb_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /mnt/storage/arangodb
+      
+  arangodb_backup:
+    driver: local

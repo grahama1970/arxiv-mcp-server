@@ -59,7 +59,20 @@ This feature alone can save days of manual paper reading by automatically identi
 
 ## 🚀 Quick Start
 
-### Installation
+### Installation Options
+
+#### Option 1: Docker (Recommended for Production)
+Best for users who want isolation and easy deployment. See [Docker Deployment Guide](docs/DOCKER_DEPLOYMENT.md) for details.
+
+```bash
+# Clone and run with Docker
+git clone https://github.com/yourusername/arxiv-mcp-server.git
+cd arxiv-mcp-server
+docker compose up -d arxiv-mcp
+```
+
+#### Option 2: Local Installation
+For development or users comfortable with Python environments.
 
 ```bash
 # Clone the repository
@@ -314,7 +327,21 @@ ArXivBot implements the Model Context Protocol (MCP), making all its tools avail
 - "Search for recent transformer papers and find evidence supporting attention mechanism efficiency"
 - "Download papers about nuclear fusion and extract all their citations"
 
-**MCP Configuration:**
+### MCP Configuration Options
+
+**Option 1: Docker (Recommended)**
+```json
+{
+    "mcpServers": {
+        "arxiv-bot": {
+            "command": "bash",
+            "args": ["/path/to/arxiv-mcp-server/scripts/docker-mcp-wrapper.sh"]
+        }
+    }
+}
+```
+
+**Option 2: Local Python**
 ```json
 {
     "mcpServers": {

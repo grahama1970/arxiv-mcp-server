@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  # Main ArXiv MCP Server
+  arxiv-mcp:
+    build: .
+    environment:
+      # Storage configuration
+      - ARXIV_STORAGE_PATH=/data/papers
+      - PYTHONUNBUFFERED=1
+      
+      # LLM Provider settings (optional)
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      
+      # Logging
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      
+      # Mac compatibility
+      - SENTENCE_TRANSFORMERS_HOME=/data/models
+      
+    volumes:
+      # Persistent storage for papers
+      - arxiv_papers:/data/papers
+      
+      # Model cache (for sentence transformers)
+      - model_cache:/data/models
+      
+      # For development: mount source code
+      - ./src:/app/src:ro
+      
+      # Share with host for debugging (optional)
+      - ${HOME}/arxiv-papers:/host-papers
+      
+    # Keep stdin open and allocate a TTY for MCP
+    stdin_open: true
+    tty: true
+    
+    # Resource limits for large models
+    deploy:
+      resources:
+        limits:
+          memory: 8G
+        reservations:
+          memory: 4G
+          
+    # Healthcheck
+    healthcheck:
+      test: ["CMD", "python", "-c", "import arxiv_mcp_server; print('healthy')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Future: ArangoDB for advanced features
+  arangodb:
+    image: arangodb:3.11
+    profiles: ["with-db"]  # Only starts with --profile with-db
+    environment:
+      ARANGO_ROOT_PASSWORD: ${ARANGO_PASSWORD:-arxiv_secure_password}
+    volumes:
+      - arangodb_data:/var/lib/arangodb3
+    ports:
+      - "8529:8529"  # Web UI access
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8529/_api/version"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional: Jupyter for research
+  jupyter:
+    profiles: ["research"]
+    build: .
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--no-browser", "--allow-root"]
+    environment:
+      - ARXIV_STORAGE_PATH=/data/papers
+      - JUPYTER_ENABLE_LAB=yes
+    volumes:
+      - arxiv_papers:/data/papers
+      - ./notebooks:/app/notebooks
+    ports:
+      - "8888:8888"
+
+volumes:
+  arxiv_papers:
+    driver: local
+  model_cache:
+    driver: local
+  arangodb_data:
+    driver: local
